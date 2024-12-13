@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insights</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2 {
+      color: #333;
+    }
+    canvas {
+      margin: 20px auto;
+      display: block;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your Budget Insights</h1>
+
+    <!-- Expense Overview -->
+    <div class="card">
+      <h2>Expense Overview</h2>
+      <p>Total Budget: ₹<span id="totalBudget"></span></p>
+      <p>Total Expenses: ₹<span id="totalExpenses"></span></p>
+      <p>Remaining Budget: ₹<span id="remainingBudget"></span></p>
+    </div>
+
+    <!-- Savings Progress -->
+    <div class="card">
+      <h2>Savings Progress</h2>
+      <canvas id="savingsProgress"></canvas>
+    </div>
+
+    <!-- Expense Breakdown -->
+    <div class="card">
+      <h2>Expense Breakdown</h2>
+      <canvas id="expenseBreakdown"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Fetch data from localStorage
+    const totalBudget = parseInt(localStorage.getItem("totalBudget")) || 0;
+    const remainingBudget = parseInt(localStorage.getItem("remainingBudget")) || 0;
+    const expensesList = JSON.parse(localStorage.getItem("expensesList")) || [];
+
+    // Update total budget and expenses
+    document.getElementById("totalBudget").textContent = totalBudget;
+    document.getElementById("totalExpenses").textContent = expensesList.reduce((acc, item) => acc + item.amount, 0);
+    document.getElementById("remainingBudget").textContent = remainingBudget;
+
+    // Savings Progress
+    const expenses = expensesList.reduce((acc, curr) => acc + curr.amount, 0);
+    const savingsProgressData = {
+      labels: ["Remaining", "Spent"],
+      datasets: [{
+        data: [remainingBudget, expenses],
+        backgroundColor: ["#36A2EB", "#FF6384"],
+      }]
+    };
+
+    // Render Savings Progress
+    new Chart(document.getElementById("savingsProgress"), {
+      type: "doughnut",
+      data: savingsProgressData,
+    });
+
+    // Group expenses by category
+    const categoryTotals = expensesList.reduce((acc, item) => {
+      const category = item.category || "Uncategorized";
+      acc[category] = (acc[category] || 0) + item.amount;
+      return acc;
+    }, {});
+
+    // Prepare data for Expense Breakdown
+    const categories = Object.keys(categoryTotals);
+    const amounts = categories.map(category => categoryTotals[category]);
+
+    const expenseBreakdownData = {
+      labels: categories,
+      datasets: [{
+        data: amounts,
+        backgroundColor: categories.map((category) => {
+          if (category === "Food") return "#FF6384";
+          if (category === "Entertainment") return "#36A2EB";
+          if (category === "Transport") return "#FFCD56";
+          return "#4BC0C0"; // Default color for others
+        }),
+      }]
+    };
+
+    // Render Expense Breakdown
+    new Chart(document.getElementById("expenseBreakdown"), {
+      type: "pie",
+      data: expenseBreakdownData,
+    });
+  </script>
+</body>
+</html>
